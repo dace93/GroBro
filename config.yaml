@@ -1,6 +1,6 @@
 name: "GroBro"
 description: "Growatt MQTT Message Broker"
-version: "2.2.3"
+version: "2.2.4"
 slug: "grobro"
 init: false
 url: https://github.com/dace93/GroBro
