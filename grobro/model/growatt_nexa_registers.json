@@ -1061,7 +1061,7 @@
       },
       "homeassistant": {
         "publish": true,
-        "name": "Smart Mode Enabled (?)",
+        "name": "Smart Mode Enabled",
         "type": "switch"
       }
     },
