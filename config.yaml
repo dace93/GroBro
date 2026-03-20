@@ -1,6 +1,6 @@
 name: "GroBro"
 description: "Growatt MQTT Message Broker"
-version: "2.2.2"
+version: "2.2.3"
 slug: "grobro"
 init: false
 url: https://github.com/dace93/GroBro
@@ -20,25 +20,25 @@ build_from:
 map:
   - share:rw
 options:
-  SOURCE_MQTT_HOST: homeassistant.local
+  SOURCE_MQTT_HOST: mqtt.dace.be
   SOURCE_MQTT_PORT: 7006
   SOURCE_MQTT_TLS: true
-  SOURCE_MQTT_USER: ""
-  SOURCE_MQTT_PASS: ""
-  TARGET_MQTT_HOST: homeassistant.local
+  SOURCE_MQTT_USER: "mqtt"
+  SOURCE_MQTT_PASS: "mqtt"
+  TARGET_MQTT_HOST: 10.10.101.220
   TARGET_MQTT_PORT: 1883
   TARGET_MQTT_TLS: false
-  TARGET_MQTT_USER: ""
-  TARGET_MQTT_PASS: ""
+  TARGET_MQTT_USER: "mqtt"
+  TARGET_MQTT_PASS: "mqtt"
   HA_BASE_TOPIC: "homeassistant"
-  GROWATT_CLOUD: false
+  GROWATT_CLOUD: true
   GROWATT_CLOUD_CONFIG_FILTER: false
   LOG_LEVEL: ERROR
   DUMP_MESSAGES: false
   DUMP_DIR: "/share/GroBro/dump"
-  MAX_SLOTS: 1
+  MAX_SLOTS: 5
   AVAILABILITY_SENSOR: false
-  TZ: ""
+  TZ: "1"
 
 schema:
   SOURCE_MQTT_HOST: str
