@@ -1,6 +1,6 @@
 name: "GroBro"
 description: "Growatt MQTT Message Broker"
-version: "2.2.4"
+version: "2.2.6"
 slug: "grobro"
 init: false
 url: https://github.com/dace93/GroBro
@@ -34,7 +34,7 @@ options:
   GROWATT_CLOUD: true
   GROWATT_CLOUD_CONFIG_FILTER: false
   LOG_LEVEL: ERROR
-  DUMP_MESSAGES: false
+  DUMP_MESSAGES: true
   DUMP_DIR: "/share/GroBro/dump"
   MAX_SLOTS: 5
   AVAILABILITY_SENSOR: false
