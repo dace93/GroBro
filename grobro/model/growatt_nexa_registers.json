@@ -228,7 +228,7 @@
         "unit_of_measurement": "W",
         "type": "number",
         "min": 0,
-        "max": 800,
+        "max": 1000,
         "step": 1
       }
     },
@@ -328,7 +328,7 @@
         "unit_of_measurement": "W",
         "type": "number",
         "min": 0,
-        "max": 800,
+        "max": 1000,
         "step": 1
       }
     },
@@ -428,7 +428,7 @@
         "unit_of_measurement": "W",
         "type": "number",
         "min": 0,
-        "max": 800,
+        "max": 1000,
         "step": 1
       }
     },
@@ -528,7 +528,7 @@
         "unit_of_measurement": "W",
         "type": "number",
         "min": 0,
-        "max": 800,
+        "max": 1000,
         "step": 1
       }
     },
@@ -628,7 +628,7 @@
         "unit_of_measurement": "W",
         "type": "number",
         "min": 0,
-        "max": 800,
+        "max": 1000,
         "step": 1
       }
     },
@@ -728,7 +728,7 @@
         "unit_of_measurement": "W",
         "type": "number",
         "min": 0,
-        "max": 800,
+        "max": 1000,
         "step": 1
       }
     },
@@ -828,7 +828,7 @@
         "unit_of_measurement": "W",
         "type": "number",
         "min": 0,
-        "max": 800,
+        "max": 1000,
         "step": 1
       }
     },
@@ -928,7 +928,7 @@
         "unit_of_measurement": "W",
         "type": "number",
         "min": 0,
-        "max": 800,
+        "max": 1000,
         "step": 1
       }
     },
@@ -1028,7 +1028,7 @@
         "unit_of_measurement": "W",
         "type": "number",
         "min": 0,
-        "max": 800,
+        "max": 1000,
         "step": 1
       }
     },
@@ -1100,7 +1100,7 @@
         "unit_of_measurement": "W",
         "type": "number",
         "min": 0,
-        "max": 800,
+        "max": 1000,
         "step": 1
       }
     },
@@ -1426,6 +1426,30 @@
         "icon": "mdi:percent"
       }
     },
+    "battery1Temp": {
+      "growatt": {
+        "position": {
+          "register_no": 30,
+          "offset": 0,
+          "size": 2
+        },
+        "data": {
+          "data_type": "FLOAT",
+          "float_options": {
+            "delta": -273.1,
+            "multiplier": 0.1
+          }
+        }
+      },
+      "homeassistant": {
+        "name": "Battery 1 Temperature",
+        "publish": true,
+        "state_class": "measurement",
+        "device_class": "temperature",
+        "unit_of_measurement": "°C",
+        "icon": "mdi:thermometer"
+      }
+    },
     "battery2Soc": {
       "growatt": {
         "position": {
@@ -1448,6 +1472,30 @@
         "device_class": "battery",
         "unit_of_measurement": "%",
         "icon": "mdi:percent"
+      }
+    },
+    "battery2Temp": {
+      "growatt": {
+        "position": {
+          "register_no": 42,
+          "offset": 0,
+          "size": 2
+        },
+        "data": {
+          "data_type": "FLOAT",
+          "float_options": {
+            "delta": -273.1,
+            "multiplier": 0.1
+          }
+        }
+      },
+      "homeassistant": {
+        "name": "Battery 2 Temperature",
+        "publish": true,
+        "state_class": "measurement",
+        "device_class": "temperature",
+        "unit_of_measurement": "°C",
+        "icon": "mdi:thermometer"
       }
     },
     "battery3Soc": {
@@ -2124,30 +2172,6 @@
         "name": "Register No 112",
         "publish": true,
         "state_class": "measurement",
-        "icon": "mdi:thermometer"
-      }
-    },
-    "battery1Temp": {
-      "growatt": {
-        "position": {
-          "register_no": 30,
-          "offset": 0,
-          "size": 2
-        },
-        "data": {
-          "data_type": "FLOAT",
-          "float_options": {
-            "delta": -273.1,
-            "multiplier": 0.1
-          }
-        }
-      },
-      "homeassistant": {
-        "name": "Battery 1 Temperature",
-        "publish": true,
-        "state_class": "measurement",
-        "device_class": "temperature",
-        "unit_of_measurement": "°C",
         "icon": "mdi:thermometer"
       }
     },
