@@ -49,6 +49,12 @@ def _extract_device_id(topic: str) -> str:
     """
     return _DEVICE_ID_RE.sub("", topic.split("/")[-1])
 
+def _normalize_neo_output_power_limit(value: float | int) -> float | int:
+    # NEO encodes its 100% output-power limit as raw value 1 in read responses.
+    return 100 if value == 1 else value
+
+
+
 
 LOG = logging.getLogger(__name__)
 HA_BASE_TOPIC = os.getenv("HA_BASE_TOPIC", "homeassistant")
@@ -118,11 +124,11 @@ class Client:
         self._ptq_for_raq: dict[str, str] = {}
 
     def start(self):
-        LOG.debug("GroBro: Start")
+        LOG.info("GroBro: Start")
         self._client.loop_start()
 
     def stop(self):
-        LOG.debug("GroBro: Stop")
+        LOG.info("GroBro: Stop")
         self._client.loop_stop()
         self._client.disconnect()
         for key, client in self._forward_clients.items():
@@ -214,7 +220,7 @@ class Client:
         )
 
     def __on_connect(self, client, userdata, flags, reason_code, properties):
-      LOG.debug(f"Connected to GroBro MQTT server with result code {reason_code}")
+      LOG.info(f"Connected to GroBro MQTT server with result code {reason_code}")
       self._client.subscribe("c/#")      
 
     def __on_message(self, client, userdata, msg: MQTTMessage):
@@ -299,11 +305,6 @@ class Client:
                     cfg["value"],
                 )
 
-                # Publish value back to HA (config/.../get)
-                topic = (
-                    f"{HA_BASE_TOPIC}/config/grobro/"
-                    f"{cfg['device_id']}/{cfg['register_no']}/get"
-                )
 
                 value = cfg["value"]
 
@@ -344,13 +345,13 @@ class Client:
                         e,
                     )
 
-                self._client.publish(topic, value, retain=True)
 
                 if self.on_config_read_response:
                     self.on_config_read_response(
                         cfg["device_id"],
                         cfg["register_no"],
-                )
+                        value,
+                    )
                 return
 
             # Config WRITE response (280)
@@ -371,7 +372,7 @@ class Client:
                 self._client.publish(topic, smart_meter["data"], retain=PUBLISH_SENSORS_RETAINED)
                 return
 
-            # NOAH/NEXA-specific message types (FE19 config, 0103 holding regs, etc.)
+            # NOAH/NEXA-specific message types (FE19 config, etc.)
             noah_msg = parser.parse_noah_message(unscrambled)
             if noah_msg and noah_msg.get("message_type") == 0xFE19:
                 if device_id.startswith("0PVP") or device_id.startswith("0HVR"):
@@ -381,9 +382,33 @@ class Client:
                         self.on_config(device_id, config)
                         return
 
+            # NEO preset-single responses carry the confirmed register value after
+            # a one-byte status field, unlike standard Modbus register blocks.
+            preset_response = GrowattModbusFunctionSingle.parse_response_grobro(unscrambled)
+            if preset_response and device_id.startswith("QMN"):
+                state = HomeAssistantHoldingRegisterInput(device_id=device_id)
+                for name, register in KNOWN_NEO_REGISTERS.holding_registers.items():
+                    if register.growatt.position.register_no != preset_response.register_no:
+                        continue
+                    value = register.growatt.data.parse(preset_response.value.to_bytes(2, "big"))
+                    if name == "output_power_limit":
+                        value = _normalize_neo_output_power_limit(value)
+                    if value is not None:
+                        state.payload.append(
+                            HomeAssistantHoldingRegisterValue(
+                                name=name,
+                                value=value,
+                                register=register.homeassistant,
+                            )
+                        )
+                    break
+                if state.payload:
+                    self.on_holding_register_input(state)
+                return
+
             # Generic modbus message
             modbus_message = GrowattModbusMessage.parse_grobro(unscrambled)
-            LOG.debug("Received modbus message: %s", modbus_message)
+            LOG.debug("Received Modbus response: %s", modbus_message)
 
             if modbus_message:
                 known_registers = None
@@ -411,17 +436,21 @@ class Client:
                     LOG.info("Modbus message from unknown device type: %s", device_id)
                     return
 
-                if (
-                    modbus_message.function
-                    == GrowattModbusFunction.READ_SINGLE_REGISTER
+                if modbus_message.function in (
+                    GrowattModbusFunction.READ_SINGLE_REGISTER,
+                    GrowattModbusFunction.READ_HOLDING_REGISTER,
                 ):
                     state = HomeAssistantHoldingRegisterInput(device_id=modbus_device_id)
                     
                     for name, register in known_registers.holding_registers.items():
                         data_raw = modbus_message.get_data(register.growatt.position)
+                        if data_raw is None:
+                            continue
                         value = register.growatt.data.parse(data_raw)
                         if value is None:
                             continue
+                        if modbus_device_id.startswith("QMN") and name == "output_power_limit":
+                            value = _normalize_neo_output_power_limit(value)
                         if register.homeassistant.type=="switch":
                             value = "ON" if value==1 else "OFF"
                         state.payload.append(

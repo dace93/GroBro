@@ -344,6 +344,7 @@ class TestClientHoldingInput:
         topic = ha_client._client.publish.call_args[0][0]
         assert "output_power_limit" in topic
         assert "get" in topic
+        assert ha_client._client.publish.call_args.kwargs["retain"] is True
 
     def test_publish_holding_register_error(self, caplog, ha_client):
         ha_client._client.publish.side_effect = Exception("publish error")
@@ -474,6 +475,20 @@ class TestClientDiscovery:
         ha_client._discovery_cache.append("QMN000ABC1D2E3FG")
         ha_client._Client__publish_device_discovery("QMN000ABC1D2E3FG")
         assert ha_client._client.publish.called
+
+    def test_neo_wifi_signal_discovery_has_numeric_metadata(self, ha_client):
+        device_id = "QMN000ABC1D2E3FG"
+        ha_client._Client__publish_device_discovery(device_id)
+
+        payload = next(
+            json.loads(call.args[1])
+            for call in ha_client._client.publish.call_args_list
+            if call.args[0] == f"homeassistant/device/{device_id}/config" and call.args[1]
+        )
+
+        component = payload["cmps"][f"grobro_{device_id}_cmd_wifi_signal_strength"]
+        assert component["device_class"] == "signal_strength"
+        assert component["state_class"] == "measurement"
 
     def test_discovery_skip_unchanged_payload(self, ha_client):
         ha_client._Client__publish_device_discovery("QMN000ABC1D2E3FG")
@@ -673,13 +688,18 @@ class TestClientConfigReadSequencing:
                 c._Client__kickoff_next_config_read("QMN000ABC1D2E3FG")
                 c.on_config_read.assert_not_called()
 
-    def test_handle_config_read_response(self):
+    def test_handle_config_read_response_publishes_to_target_broker(self):
         with patch("grobro.ha.client.mqtt.Client"):
             with patch("grobro.ha.client.os.listdir", return_value=[]):
                 c = Client(MQTTConfig(host="localhost", port=1883))
                 c._config_read_inflight["QMN000ABC1D2E3FG"] = 1280
                 with patch("grobro.ha.client.Timer"):
-                    c.handle_config_read_response("QMN000ABC1D2E3FG", 1280)
+                    c.handle_config_read_response("QMN000ABC1D2E3FG", 1280, -55)
+                c._client.publish.assert_called_once_with(
+                    "homeassistant/config/grobro/QMN000ABC1D2E3FG/1280/get",
+                    -55,
+                    retain=True,
+                )
                 assert "QMN000ABC1D2E3FG" not in c._config_read_inflight
 
     def test_handle_config_read_response_wrong_register(self):
@@ -688,7 +708,7 @@ class TestClientConfigReadSequencing:
                 c = Client(MQTTConfig(host="localhost", port=1883))
                 c._config_read_inflight["QMN000ABC1D2E3FG"] = 1280
                 with patch("grobro.ha.client.Timer"):
-                    c.handle_config_read_response("QMN000ABC1D2E3FG", 999)
+                    c.handle_config_read_response("QMN000ABC1D2E3FG", 999, -55)
                 assert c._config_read_inflight["QMN000ABC1D2E3FG"] == 1280
 
     def test_config_read_timeout(self):
